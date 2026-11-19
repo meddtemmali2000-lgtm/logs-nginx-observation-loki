@@ -1,0 +1,49 @@
+# --- Secrets & credentials (NE JAMAIS COMMITTER) ---
+**/*.key
+**/*.pem
+**/*.p12
+**/*.pfx
+**/garage.env
+**/.env
+**/.env.*
+!**/.env.example
+!**/*.env.example
+**/secrets/
+**/pki-out/
+**/loki-pki/
+**/ca.key
+**/client-*.key
+
+# Certificats générés (garder uniquement le script gen-certs.sh)
+pki/*.crt
+pki/*.csr
+pki/*.srl
+pki/ca.*
+!pki/gen-certs.sh
+
+# --- Binaires / paquets lourds ---
+offline-packages/*.rpm
+offline-packages/*.deb
+offline-packages/*.tar.gz
+!offline-packages/*.md
+!offline-packages/*SHA256*
+!offline-packages/.gitkeep
+
+# --- Artefacts de build / caches ---
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.mypy_cache/
+docs/*.html
+!docs/**/*.md
+!docs/**/*.pdf
+!docs/img/**
+
+# --- Système / IDE ---
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+*.tmp
+/tmp/

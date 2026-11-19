@@ -1,0 +1,3115 @@
+{
+  "uid": "nginx-loki-analytics",
+  "title": "Nginx — Analyse du trafic (Loki)",
+  "tags": [
+    "nginx",
+    "loki",
+    "alloy"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 41,
+  "version": 1,
+  "editable": true,
+  "graphTooltip": 1,
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "refresh": "5m",
+  "timepicker": {
+    "refresh_intervals": [
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h"
+    ]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "ds",
+        "label": "Source Loki",
+        "type": "datasource",
+        "query": "loki",
+        "current": {
+          "text": "Loki-Nginx",
+          "value": "loki-nginx"
+        },
+        "hide": 0
+      },
+      {
+        "name": "site",
+        "label": "Site",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "${ds}"
+        },
+        "query": {
+          "qryType": 1,
+          "query": "label_values({job=\"nginx-access\"}, site)",
+          "refId": "LokiVariableQueryEditor-VariableQuery"
+        },
+        "definition": "label_values({job=\"nginx-access\"}, site)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "sort": 1
+      },
+      {
+        "name": "environment",
+        "label": "Environnement",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "${ds}"
+        },
+        "query": {
+          "qryType": 1,
+          "query": "label_values({job=\"nginx-access\"}, environment)",
+          "refId": "LokiVariableQueryEditor-VariableQuery"
+        },
+        "definition": "label_values({job=\"nginx-access\"}, environment)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "sort": 1
+      },
+      {
+        "name": "application",
+        "label": "Application",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "${ds}"
+        },
+        "query": {
+          "qryType": 1,
+          "query": "label_values({job=\"nginx-access\"}, application)",
+          "refId": "LokiVariableQueryEditor-VariableQuery"
+        },
+        "definition": "label_values({job=\"nginx-access\"}, application)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "sort": 1
+      },
+      {
+        "name": "hostname",
+        "label": "Serveur web",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "${ds}"
+        },
+        "query": {
+          "qryType": 1,
+          "query": "label_values({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\"}, hostname)",
+          "refId": "LokiVariableQueryEditor-VariableQuery"
+        },
+        "definition": "label_values({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\"}, hostname)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "sort": 1
+      },
+      {
+        "name": "min_requests",
+        "label": "Volume minimum (URLs lentes)",
+        "type": "custom",
+        "query": "1,3,5,10,20,50,100",
+        "options": [
+          {
+            "text": "1",
+            "value": "1",
+            "selected": false
+          },
+          {
+            "text": "3",
+            "value": "3",
+            "selected": true
+          },
+          {
+            "text": "5",
+            "value": "5",
+            "selected": false
+          },
+          {
+            "text": "10",
+            "value": "10",
+            "selected": false
+          },
+          {
+            "text": "20",
+            "value": "20",
+            "selected": false
+          },
+          {
+            "text": "50",
+            "value": "50",
+            "selected": false
+          },
+          {
+            "text": "100",
+            "value": "100",
+            "selected": false
+          }
+        ],
+        "current": {
+          "text": "3",
+          "value": "3"
+        },
+        "includeAll": false,
+        "multi": false,
+        "description": "Nombre minimal de requêtes pour qu'une URL soit classée dans le Top 20 des URLs lentes."
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": [],
+  "panels": [
+    {
+      "type": "row",
+      "id": 1,
+      "title": "A. Vue générale du trafic",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "id": 2,
+      "title": "Requêtes (période)",
+      "description": "Nombre total de requêtes HTTP sur la période sélectionnée (fichiers statiques réussis et sondes du proxy exclus à la collecte).",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} [$__range]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "id": 3,
+      "title": "Requêtes / seconde (moy.)",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} [$__range])) / $__range_s",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 3
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "id": 4,
+      "title": "Visiteurs uniques estimés",
+      "description": "Nombre d'empreintes distinctes (IP + User-Agent, hachées et salées sur le serveur web). Estimation : une IP partagée (NAT) regroupe plusieurs personnes, un utilisateur mobile peut changer d'IP.",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(sum by (visitor_id) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} | json visitor_id=\"visitor_id\" [$__range])))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "purple",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "id": 5,
+      "title": "Serveurs web actifs",
+      "description": "Serveurs ayant envoyé au moins une ligne sur la période.",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(count by (hostname) (count_over_time({job=~\"nginx-access|nginx-error\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} [$__range])))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "id": 6,
+      "title": "Requêtes (24 dernières heures)",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} [24h]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "id": 7,
+      "title": "Temps de réponse P95",
+      "description": "95 % des requêtes ont été servies en moins de ce temps (request_time Nginx).",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "quantile_over_time(0.95, {job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} | json request_time=\"request_time\" | unwrap request_time | __error__=\"\" [$__range]) by (job)",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "0",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 8,
+      "title": "Évolution du trafic par heure",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} [1h]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "range",
+          "legendFormat": "Requêtes / heure",
+          "step": "1h"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "showPoints": "never",
+            "barAlignment": -1,
+            "spanNulls": false,
+            "insertNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "interval": "1h"
+    },
+    {
+      "type": "timeseries",
+      "id": 9,
+      "title": "Requêtes par seconde par serveur",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (hostname) (rate({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} [$__auto]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "range",
+          "legendFormat": "{{hostname}}"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "showPoints": "never",
+            "barAlignment": 0,
+            "spanNulls": false,
+            "insertNulls": false
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "id": 10,
+      "title": "B. Répartition des codes HTTP",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "id": 11,
+      "title": "2xx — Succès",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 14
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"2[0-9]{2}\"` [$__range]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "id": 12,
+      "title": "3xx — Redirections",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 14
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"3[0-9]{2}\"` [$__range]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "id": 13,
+      "title": "4xx — Erreurs client",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 14
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"4[0-9]{2}\"` [$__range]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "id": 14,
+      "title": "5xx — Erreurs serveur",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 14
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"5[0-9]{2}\"` [$__range]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "piechart",
+      "id": 15,
+      "title": "Répartition par code HTTP",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 18
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (status) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} | json status=\"status\" [$__range]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "options": {
+        "pieType": "donut",
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ],
+          "showLegend": true
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^Value/",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 16,
+      "title": "Évolution par classe de statut",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 16,
+        "x": 8,
+        "y": 18
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"2[0-9]{2}\"` [$__auto]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "range",
+          "legendFormat": "2xx"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"3[0-9]{2}\"` [$__auto]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "range",
+          "legendFormat": "3xx"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"4[0-9]{2}\"` [$__auto]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "range",
+          "legendFormat": "4xx"
+        },
+        {
+          "refId": "D",
+          "expr": "sum(count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"5[0-9]{2}\"` [$__auto]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "range",
+          "legendFormat": "5xx"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "showPoints": "never",
+            "barAlignment": 0,
+            "spanNulls": false,
+            "insertNulls": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "2xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "3xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "4xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "5xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 17,
+      "title": "Évolution des erreurs (4xx / 5xx) par code",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (status) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"[45][0-9]{2}\"` | json status=\"status\" [$__auto]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "range",
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "showPoints": "never",
+            "barAlignment": -1,
+            "spanNulls": false,
+            "insertNulls": false
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "id": 18,
+      "title": "C. Top 20 des URLs les plus consultées",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
+      "panels": []
+    },
+    {
+      "type": "table",
+      "id": 19,
+      "title": "Top 20 des URLs les plus consultées",
+      "description": "Requêtes hors erreurs client 4xx (bruit des scanners, analysé en section F). Pourcentage = part du trafic total. Chemins sans query string ; les segments de type jeton (≥ 32 caractères) sont remplacés par :token.",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 36
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(20, sum by (uri) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} !~ `\"status\":\"4[0-9]{2}\"` | json uri=\"uri\" [$__range])))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        },
+        {
+          "refId": "B",
+          "expr": "100 * topk(20, sum by (uri) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} !~ `\"status\":\"4[0-9]{2}\"` | json uri=\"uri\" [$__range]))) / ignoring(uri) group_left sum(count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} [$__range]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "index",
+            "alias": "row_index",
+            "index": {
+              "asPercentile": false
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "Position",
+            "replaceFields": false,
+            "binary": {
+              "left": "row_index",
+              "operator": "+",
+              "right": "1"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "row_index": true
+            },
+            "indexByName": {
+              "Position": 0,
+              "uri": 1,
+              "Value #A": 2,
+              "Value #B": 3
+            },
+            "renameByName": {
+              "uri": "URL",
+              "Value #A": "Nombre de requêtes",
+              "Value #B": "Pourcentage du trafic"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Aucune donnée sur la période",
+          "custom": {
+            "align": "auto",
+            "filterable": true,
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Position"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "auto"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pourcentage du trafic"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic"
+                }
+              },
+              {
+                "id": "max",
+                "value": 100
+              },
+              {
+                "id": "min",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "row",
+      "id": 20,
+      "title": "D. Top 20 des URLs les plus lentes (classement par P95)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 48
+      },
+      "panels": []
+    },
+    {
+      "type": "text",
+      "id": 21,
+      "title": "",
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 49
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**Classement par P95 de `request_time`** (temps total Nginx), hors erreurs client 4xx. Seules les URLs ayant au moins **$min_requests requêtes** sur la période sont classées (variable *Volume minimum* en haut du dashboard) : en dessous, un P95 n'est pas représentatif. **Upstream P95** = temps du serveur applicatif (`upstream_response_time`) : s'il est proche du P95 total, la lenteur vient de l'application ; s'il est faible ou vide, elle vient de Nginx, du réseau client ou d'un contenu servi directement."
+      }
+    },
+    {
+      "type": "table",
+      "id": 22,
+      "title": "Top 20 des URLs les plus lentes",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 52
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (uri) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} !~ `\"status\":\"4[0-9]{2}\"` | json uri=\"uri\" [$__range])) >= $min_requests",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        },
+        {
+          "refId": "B",
+          "expr": "avg_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} !~ `\"status\":\"4[0-9]{2}\"` | json uri=\"uri\", request_time=\"request_time\" | unwrap request_time | __error__=\"\" [$__range]) by (uri) and on (uri) (sum by (uri) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} !~ `\"status\":\"4[0-9]{2}\"` | json uri=\"uri\" [$__range])) >= $min_requests)",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        },
+        {
+          "refId": "C",
+          "expr": "quantile_over_time(0.95, {job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} !~ `\"status\":\"4[0-9]{2}\"` | json uri=\"uri\", request_time=\"request_time\" | unwrap request_time | __error__=\"\" [$__range]) by (uri) and on (uri) (sum by (uri) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} !~ `\"status\":\"4[0-9]{2}\"` | json uri=\"uri\" [$__range])) >= $min_requests)",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        },
+        {
+          "refId": "D",
+          "expr": "max_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} !~ `\"status\":\"4[0-9]{2}\"` | json uri=\"uri\", request_time=\"request_time\" | unwrap request_time | __error__=\"\" [$__range]) by (uri) and on (uri) (sum by (uri) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} !~ `\"status\":\"4[0-9]{2}\"` | json uri=\"uri\" [$__range])) >= $min_requests)",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        },
+        {
+          "refId": "E",
+          "expr": "quantile_over_time(0.95, {job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} !~ `\"status\":\"4[0-9]{2}\"` | json uri=\"uri\", upstream_response_time=\"upstream_response_time\" | upstream_response_time =~ \"^[0-9.]+$\" | unwrap upstream_response_time | __error__=\"\" [$__range]) by (uri) and on (uri) (sum by (uri) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} !~ `\"status\":\"4[0-9]{2}\"` | json uri=\"uri\" [$__range])) >= $min_requests)",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #C",
+                "desc": true
+              }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 20
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "index",
+            "alias": "row_index",
+            "index": {
+              "asPercentile": false
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "Position",
+            "replaceFields": false,
+            "binary": {
+              "left": "row_index",
+              "operator": "+",
+              "right": "1"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "row_index": true
+            },
+            "indexByName": {
+              "Position": 0,
+              "uri": 1,
+              "Value #A": 2,
+              "Value #B": 3,
+              "Value #C": 4,
+              "Value #D": 5,
+              "Value #E": 6
+            },
+            "renameByName": {
+              "uri": "URL",
+              "Value #A": "Nombre de requêtes",
+              "Value #B": "Temps moyen",
+              "Value #C": "P95",
+              "Value #D": "Temps maximum",
+              "Value #E": "Upstream P95"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Aucune URL n'atteint le volume minimum sur la période : baisser « Volume minimum » ou élargir la période",
+          "custom": {
+            "align": "auto",
+            "filterable": true,
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Position"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "auto"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Temps moyen"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": null
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "#EAB839",
+                      "value": 0.5
+                    },
+                    {
+                      "color": "orange",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 2
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "P95"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": null
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "#EAB839",
+                      "value": 0.5
+                    },
+                    {
+                      "color": "orange",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 2
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Temps maximum"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": null
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "#EAB839",
+                      "value": 0.5
+                    },
+                    {
+                      "color": "orange",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 2
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Upstream P95"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": null
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "#EAB839",
+                      "value": 0.5
+                    },
+                    {
+                      "color": "orange",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 2
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 23,
+      "title": "Temps de réponse : total vs serveur applicatif",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 65
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "quantile_over_time(0.95, {job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} | json request_time=\"request_time\" | unwrap request_time | __error__=\"\" [$__auto]) by (job)",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "range",
+          "legendFormat": "P95 total (request_time)"
+        },
+        {
+          "refId": "B",
+          "expr": "quantile_over_time(0.95, {job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} | json upstream_response_time=\"upstream_response_time\" | upstream_response_time =~ \"^[0-9.]+$\" | unwrap upstream_response_time | __error__=\"\" [$__auto]) by (job)",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "range",
+          "legendFormat": "P95 upstream"
+        },
+        {
+          "refId": "C",
+          "expr": "avg_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} | json request_time=\"request_time\" | unwrap request_time | __error__=\"\" [$__auto]) by (job)",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "range",
+          "legendFormat": "Moyenne totale"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "showPoints": "never",
+            "barAlignment": 0,
+            "spanNulls": false,
+            "insertNulls": false
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "id": 24,
+      "title": "E. Analyse des visiteurs",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 73
+      },
+      "panels": []
+    },
+    {
+      "type": "text",
+      "id": 25,
+      "title": "",
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 74
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "⚠️ **Visiteurs estimés** : une empreinte = un couple (IP, navigateur), haché et salé sur le serveur web. Plusieurs personnes derrière une même IP (NAT, entreprise) peuvent compter pour un seul visiteur ; un mobile qui change d'IP compte plusieurs fois. Les IP sont **tronquées** (/24 en IPv4, /48 en IPv6) avant l'envoi."
+      }
+    },
+    {
+      "type": "stat",
+      "id": 26,
+      "title": "Visiteurs uniques estimés",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 76
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(sum by (visitor_id) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} | json visitor_id=\"visitor_id\" [$__range])))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "purple",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 27,
+      "title": "Visiteurs uniques estimés par heure",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 18,
+        "x": 6,
+        "y": 76
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(sum by (visitor_id) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} | json visitor_id=\"visitor_id\" [1h])))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "range",
+          "legendFormat": "Visiteurs / heure",
+          "step": "1h"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "showPoints": "never",
+            "barAlignment": -1,
+            "spanNulls": false,
+            "insertNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "interval": "1h"
+    },
+    {
+      "type": "table",
+      "id": 28,
+      "title": "Top 20 des réseaux clients les plus actifs (IP tronquées)",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 84
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(20, sum by (remote_addr) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} | json remote_addr=\"remote_addr\" [$__range])))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "index",
+            "alias": "row_index",
+            "index": {
+              "asPercentile": false
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "Position",
+            "replaceFields": false,
+            "binary": {
+              "left": "row_index",
+              "operator": "+",
+              "right": "1"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "row_index": true
+            },
+            "indexByName": {
+              "Position": 0,
+              "remote_addr": 1,
+              "Value #A": 2
+            },
+            "renameByName": {
+              "remote_addr": "Réseau (/24)",
+              "Value #A": "Requêtes"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Aucune donnée sur la période",
+          "custom": {
+            "align": "auto",
+            "filterable": true,
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Position"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "auto"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "piechart",
+      "id": 29,
+      "title": "Navigateurs (User-Agent)",
+      "description": "Famille calculée par Alloy à partir du User-Agent. « Outil/Script » = curl, scanners, bibliothèques HTTP.",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 8,
+        "y": 84
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (ua_family) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} | json ua_family=\"ua_family\" [$__range]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": "{{ua_family}}"
+        }
+      ],
+      "options": {
+        "pieType": "donut",
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ],
+          "showLegend": true
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^Value/",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "piechart",
+      "id": 30,
+      "title": "Méthodes HTTP",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 16,
+        "y": 84
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (request_method) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} | json request_method=\"request_method\" [$__range]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": "{{request_method}}"
+        }
+      ],
+      "options": {
+        "pieType": "donut",
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ],
+          "showLegend": true
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^Value/",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "id": 31,
+      "title": "F. Analyse des erreurs",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 94
+      },
+      "panels": []
+    },
+    {
+      "type": "text",
+      "id": 32,
+      "title": "",
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 95
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "Sur une période contenant un **scan de vulnérabilités massif** (plus de 50 000 URLs 404 différentes), le tableau des 404 peut afficher *maximum number of series reached* : réduire la période. Le tableau « 404 par réseau client » reste disponible pour identifier la source du scan."
+      }
+    },
+    {
+      "type": "table",
+      "id": 33,
+      "title": "URLs en erreur 404",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 97
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(20, sum by (uri) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"404\"` | json uri=\"uri\" [$__range])))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "index",
+            "alias": "row_index",
+            "index": {
+              "asPercentile": false
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "Position",
+            "replaceFields": false,
+            "binary": {
+              "left": "row_index",
+              "operator": "+",
+              "right": "1"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "row_index": true
+            },
+            "indexByName": {
+              "Position": 0,
+              "uri": 1,
+              "Value #A": 2
+            },
+            "renameByName": {
+              "uri": "URL",
+              "Value #A": "Occurrences"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Aucune erreur 404 sur la période",
+          "custom": {
+            "align": "auto",
+            "filterable": true,
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Position"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "auto"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "table",
+      "id": 34,
+      "title": "URLs en erreur 500",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 8,
+        "y": 97
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(20, sum by (uri) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"500\"` | json uri=\"uri\" [$__range])))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "index",
+            "alias": "row_index",
+            "index": {
+              "asPercentile": false
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "Position",
+            "replaceFields": false,
+            "binary": {
+              "left": "row_index",
+              "operator": "+",
+              "right": "1"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "row_index": true
+            },
+            "indexByName": {
+              "Position": 0,
+              "uri": 1,
+              "Value #A": 2
+            },
+            "renameByName": {
+              "uri": "URL",
+              "Value #A": "Occurrences"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Aucune erreur 500 sur la période",
+          "custom": {
+            "align": "auto",
+            "filterable": true,
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Position"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "auto"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "table",
+      "id": 35,
+      "title": "Erreurs 502 / 503",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 16,
+        "y": 97
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(20, sum by (uri, status) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"50[23]\"` | json uri=\"uri\", status=\"status\" [$__range])))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "index",
+            "alias": "row_index",
+            "index": {
+              "asPercentile": false
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "Position",
+            "replaceFields": false,
+            "binary": {
+              "left": "row_index",
+              "operator": "+",
+              "right": "1"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "row_index": true
+            },
+            "indexByName": {
+              "Position": 0,
+              "uri": 1,
+              "status": 2,
+              "Value #A": 3
+            },
+            "renameByName": {
+              "uri": "URL",
+              "status": "Code",
+              "Value #A": "Occurrences"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Aucune erreur 502 / 503 sur la période",
+          "custom": {
+            "align": "auto",
+            "filterable": true,
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Position"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "auto"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "table",
+      "id": 36,
+      "title": "Erreurs par serveur web",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 107
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (hostname, status) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"[45][0-9]{2}\"` | json status=\"status\" [$__range]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "row_index": true
+            },
+            "indexByName": {
+              "hostname": 1,
+              "status": 2,
+              "Value #A": 3
+            },
+            "renameByName": {
+              "hostname": "Serveur",
+              "status": "Code",
+              "Value #A": "Occurrences"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Aucune erreur 4xx / 5xx sur la période",
+          "custom": {
+            "align": "auto",
+            "filterable": true,
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "table",
+      "id": 37,
+      "title": "404 par réseau client (détection de scans)",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 8,
+        "y": 107
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(20, sum by (remote_addr) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"404\"` | json remote_addr=\"remote_addr\" [$__range])))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "instant",
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "row_index": true
+            },
+            "indexByName": {
+              "remote_addr": 1,
+              "Value #A": 2
+            },
+            "renameByName": {
+              "remote_addr": "Réseau (/24)",
+              "Value #A": "404"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Aucune erreur 404 sur la période",
+          "custom": {
+            "align": "auto",
+            "filterable": true,
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 38,
+      "title": "Évolution des erreurs 5xx par serveur",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 10,
+        "x": 14,
+        "y": 107
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (hostname) (count_over_time({job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"5[0-9]{2}\"` [$__auto]))",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "range",
+          "legendFormat": "{{hostname}}"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "showPoints": "never",
+            "barAlignment": -1,
+            "spanNulls": false,
+            "insertNulls": false
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "logs",
+      "id": 39,
+      "title": "Dernières requêtes en erreur serveur (5xx)",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 116
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"nginx-access\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"} |~ `\"status\":\"5[0-9]{2}\"` | json | line_format \"{{.status}} {{.request_method}} {{.uri}} {{.request_time}}s upstream={{.upstream_response_time}} id={{.request_id}}\"",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "range",
+          "legendFormat": "",
+          "maxLines": 200
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "type": "logs",
+      "id": 40,
+      "title": "Journal d'erreurs Nginx (error.log)",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 125
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"nginx-error\", site=~\"$site\", environment=~\"$environment\", application=~\"$application\", hostname=~\"$hostname\"}",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds}"
+          },
+          "editorMode": "code",
+          "queryType": "range",
+          "legendFormat": "",
+          "maxLines": 200
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "dedupStrategy": "none"
+      }
+    }
+  ]
+}

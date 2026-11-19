@@ -1,0 +1,25 @@
+# /etc/logrotate.d/nginx
+# La rotation définit la profondeur du buffer local : en cas de coupure avec Loki,
+# Alloy reprend la lecture de access_json.log à sa dernière position.
+# rotate 7 = 7 jours conservés localement, aligné sur reject_old_samples_max_age (168h) de Loki :
+# au-delà, Loki refuserait de toute façon les lignes.
+# delaycompress : le fichier .1 reste lisible en clair pendant un cycle (diagnostic manuel).
+/var/log/nginx/*.log {
+	daily
+	missingok
+	rotate 7
+	maxsize 500M
+	compress
+	delaycompress
+	notifempty
+	create 0640 www-data adm
+	sharedscripts
+	prerotate
+		if [ -d /etc/logrotate.d/httpd-prerotate ]; then \
+			run-parts /etc/logrotate.d/httpd-prerotate; \
+		fi \
+	endscript
+	postrotate
+		invoke-rc.d nginx rotate >/dev/null 2>&1
+	endscript
+}

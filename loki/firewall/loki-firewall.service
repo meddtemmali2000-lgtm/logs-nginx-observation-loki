@@ -1,0 +1,15 @@
+# /etc/systemd/system/loki-firewall.service
+[Unit]
+Description=Filtrage iptables du port 3100 (Loki) - serveurs web autorisés uniquement
+Before=loki.service
+After=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/etc/sysconfig/loki-firewall
+ExecStart=/usr/local/sbin/loki-firewall.sh start
+ExecStop=/usr/local/sbin/loki-firewall.sh stop
+
+[Install]
+WantedBy=multi-user.target

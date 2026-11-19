@@ -1,0 +1,22 @@
+# /etc/grafana/provisioning/datasources/loki-nginx.yaml
+# Nouvelle datasource dédiée : la datasource "loki" existante n'est pas modifiée.
+# Grafana s'authentifie auprès de Loki avec son propre certificat client (TLS mutuel).
+# Les fichiers doivent être lisibles par l'utilisateur "grafana" (voir procédure d'installation).
+apiVersion: 1
+
+datasources:
+  - name: Loki-Nginx
+    uid: loki-nginx
+    type: loki
+    access: proxy
+    url: https://127.0.0.1:3100
+    editable: false
+    jsonData:
+      tlsAuth: true
+      tlsAuthWithCACert: true
+      maxLines: 1000
+      timeout: 120
+    secureJsonData:
+      tlsCACert: $__file{/etc/grafana/pki/ca.crt}
+      tlsClientCert: $__file{/etc/grafana/pki/client-grafana.crt}
+      tlsClientKey: $__file{/etc/grafana/pki/client-grafana.key}

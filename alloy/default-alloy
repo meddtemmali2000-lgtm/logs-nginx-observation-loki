@@ -1,0 +1,25 @@
+## /etc/default/alloy — lu par alloy.service (EnvironmentFile) et par /usr/lib/alloy/alloy-wrapper
+## (paquet Debian Alloy v1.21.3). Permissions : 0640 root:alloy (contient le sel).
+
+# Fichier de configuration Alloy (moteur par défaut).
+CONFIG_FILE="/etc/alloy/config.alloy"
+
+# Variables du moteur OpenTelemetry, inutilisé ici (valeurs du paquet d'origine).
+OTEL_CONFIG_FILE="/etc/alloy/config.yaml"
+OTEL_CUSTOM_ARGS=""
+ALLOY_OTEL_MODE=""
+
+# Interface d'administration/métriques limitée à la machine locale
+# (accès : ssh -L 12345:127.0.0.1:12345 root@<serveur>).
+# Note : le wrapper ajoute lui-même --storage.path=/var/lib/alloy/data (fichiers de positions).
+CUSTOM_ARGS="--server.http.listen-addr=127.0.0.1:12345 --disable-reporting"
+
+RESTART_ON_UPGRADE=true
+
+# Point d'envoi Loki (TLS mutuel).
+LOKI_URL="https://192.168.23.24:3100/loki/api/v1/push"
+
+# Sel de l'empreinte visiteur : identique sur tous les serveurs web (sinon un même
+# visiteur passant par deux serveurs compte deux fois), secret, généré une seule fois :
+#   openssl rand -hex 32
+VISITOR_SALT="A_REMPLACER_PAR_openssl_rand_-hex_32"

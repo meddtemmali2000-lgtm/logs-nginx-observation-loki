@@ -1,0 +1,109 @@
+# /etc/loki/config.yml — Grafana Loki v3.7.10 — mode monolithique, stockage Garage S3
+# Clés vérifiées dans docs/sources/shared/configuration.md (tag v3.7.10).
+# Les identifiants S3 viennent de /etc/loki/garage.env (EnvironmentFile) via -config.expand-env=true.
+
+# Mono-tenant : pas d'en-tête X-Scope-OrgID. L'authentification est assurée par TLS
+# mutuel (certificat client obligatoire) + filtrage iptables du port 3100.
+auth_enabled: false
+
+server:
+  http_listen_address: 0.0.0.0
+  http_listen_port: 3100
+  # gRPC interne au monolithe : jamais exposé.
+  grpc_listen_address: 127.0.0.1
+  grpc_listen_port: 9096
+  log_level: info
+  http_server_read_timeout: 2m
+  http_server_write_timeout: 2m
+  tls_min_version: VersionTLS12
+  http_tls_config:
+    cert_file: /etc/loki/pki/loki.crt
+    key_file: /etc/loki/pki/loki.key
+    client_auth_type: RequireAndVerifyClientCert
+    client_ca_file: /etc/loki/pki/ca.crt
+
+common:
+  instance_addr: 127.0.0.1
+  path_prefix: /var/lib/loki
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+  storage:
+    s3:
+      endpoint: http://172.18.40.129:3900
+      region: garage
+      bucketnames: loki-chunks
+      access_key_id: ${GARAGE_ACCESS_KEY_ID}
+      secret_access_key: ${GARAGE_SECRET_ACCESS_KEY}
+      s3forcepathstyle: true
+      insecure: true
+
+schema_config:
+  configs:
+    # Bascule complète vers Garage (test). Les ~160 Ko de données locales antérieures
+    # ne sont plus interrogées ; Alloy renvoie les nouvelles lignes dès le redémarrage.
+    - from: 2026-11-01
+      store: tsdb
+      object_store: s3
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+ingester:
+  # Chunks plus gros = moins de fichiers et meilleure compression pour un faible volume.
+  chunk_target_size: 1572864
+  chunk_idle_period: 1h
+  max_chunk_age: 2h
+
+compactor:
+  working_directory: /var/lib/loki/compactor
+  compaction_interval: 10m
+  retention_enabled: true
+  retention_delete_delay: 2h
+  delete_request_store: s3
+
+limits_config:
+  # Rétention globale : 14 jours (configurable).
+  retention_period: 336h
+
+  # Entrées plus vieilles que 7 jours refusées (coupure > 7 jours = lignes perdues).
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+
+  # Ingestion : large marge pour absorber la reprise après coupure réseau.
+  ingestion_rate_mb: 8
+  ingestion_burst_size_mb: 16
+  per_stream_rate_limit: 8MB
+  per_stream_rate_limit_burst: 16MB
+
+  # Cardinalité : 5 labels autorisés + marge ; aucun label implicite.
+  max_label_names_per_series: 8
+  discover_service_name: []
+  discover_log_levels: false
+
+  # Requêtes : bornes de protection CPU/RAM.
+  # max_query_series borne le nombre d'URLs / visiteurs distincts agrégés par requête
+  # (testé : 200 000 URLs uniques d'un scan = ~720 Mo de RSS ; 50 000 = compromis).
+  max_query_series: 50000
+  max_query_parallelism: 8
+  tsdb_max_query_parallelism: 32
+  split_queries_by_interval: 1h
+  query_timeout: 2m
+  max_entries_limit_per_query: 5000
+
+query_range:
+  cache_results: true
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
+        max_size_mb: 200
+
+# Composants non nécessaires ici.
+pattern_ingester:
+  enabled: false
+
+analytics:
+  reporting_enabled: false

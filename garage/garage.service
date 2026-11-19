@@ -1,0 +1,29 @@
+# /etc/systemd/system/garage.service
+[Unit]
+Description=Garage S3-compatible object storage (Loki backend)
+Documentation=https://garagehq.deuxfleurs.fr/documentation/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=garage
+Group=garage
+# --single-node : layout automatique (1 nœud, sans réplication). Pour un test.
+ExecStart=/usr/local/bin/garage server --single-node
+WorkingDirectory=/var/lib/garage
+Environment=GARAGE_CONFIG_FILE=/etc/garage.toml
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+# Limites : cette VM héberge aussi Zabbix/PostgreSQL.
+MemoryMax=1G
+CPUQuota=100%
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/garage
+
+[Install]
+WantedBy=multi-user.target

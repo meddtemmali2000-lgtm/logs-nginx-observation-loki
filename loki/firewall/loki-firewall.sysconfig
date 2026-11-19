@@ -1,0 +1,4 @@
+# /etc/sysconfig/loki-firewall
+# IP (ou CIDR) des serveurs web autorisés à pousser des logs vers Loki (TCP/3100).
+# Ajouter un serveur : compléter la liste puis `systemctl restart loki-firewall`.
+LOKI_ALLOWED_SOURCES="192.168.206.112"

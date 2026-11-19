@@ -1,0 +1,226 @@
+// /etc/alloy/config.alloy — Grafana Alloy v1.21.3 — serveur web Nginx
+// Uniquement des composants et arguments "generally-available" (aucun --stability.level requis).
+//
+// Paramètres à adapter par serveur : bloc LABELS (site, environment, application)
+// et variables d'environnement dans /etc/default/alloy :
+//   LOKI_URL, VISITOR_SALT
+
+// ---------------------------------------------------------------------------
+// 1. Lecture locale des fichiers Nginx
+// ---------------------------------------------------------------------------
+// Labels Loki autorisés : site, environment, hostname, application, job (cardinalité fixe).
+loki.source.file "nginx_access" {
+  targets = [{
+    __path__    = "/var/log/nginx/access_json.log",
+    job         = "nginx-access",
+    site        = "noc",
+    environment = "test",
+    application = "noc-dashboard",
+    hostname    = constants.hostname,
+  }]
+  forward_to = [loki.process.nginx_access.receiver]
+
+  // Fichier inexistant au démarrage ou recréé par logrotate : redécouvert automatiquement.
+  file_match {
+    enabled     = true
+    sync_period = "10s"
+  }
+
+  // Entrée corrompue dans le fichier de positions : reprise en fin de fichier plutôt
+  // que relecture complète (des doublons fausseraient les statistiques).
+  on_positions_file_error = "restart_from_end"
+}
+
+loki.source.file "nginx_error" {
+  targets = [{
+    __path__    = "/var/log/nginx/error.log",
+    job         = "nginx-error",
+    site        = "noc",
+    environment = "test",
+    application = "noc-dashboard",
+    hostname    = constants.hostname,
+  }]
+  forward_to = [loki.process.nginx_error.receiver]
+
+  file_match {
+    enabled     = true
+    sync_period = "10s"
+  }
+  on_positions_file_error = "restart_from_end"
+}
+
+// ---------------------------------------------------------------------------
+// 2. Traitement des logs d'accès
+// ---------------------------------------------------------------------------
+loki.process "nginx_access" {
+  forward_to = [loki.write.central.receiver]
+
+  // Label "filename" ajouté automatiquement par loki.source.file : inutile, supprimé.
+  stage.label_drop {
+    values = ["filename"]
+  }
+
+  // escape=json garantit un JSON valide ; une ligne illisible est comptée dans
+  // loki_process_dropped_lines_total plutôt que transmise vide.
+  stage.json {
+    expressions = {
+      timestamp              = "",
+      server_name            = "",
+      remote_addr            = "",
+      request_method         = "",
+      uri                    = "",
+      status                 = "",
+      body_bytes_sent        = "",
+      request_time           = "",
+      upstream_response_time = "",
+      http_user_agent        = "",
+      request_id             = "",
+    }
+    drop_malformed = true
+  }
+
+  // Fichiers statiques : supprimés UNIQUEMENT s'ils ont réussi (2xx/3xx).
+  // Les 4xx/5xx sur des statiques sont conservés.
+  stage.drop {
+    source              = "uri,status"
+    separator           = ";"
+    expression          = "(?i)\\.(css|js|mjs|map|png|jpe?g|gif|svg|ico|webp|avif|bmp|woff2?|ttf|otf|eot);[23][0-9]{2}$"
+    drop_counter_reason = "static_asset_ok"
+  }
+
+  // Sondes de supervision du reverse proxy : supprimées si elles réussissent
+  // (sinon elles faussent les visiteurs). En cas d'échec, elles sont conservées.
+  stage.drop {
+    source              = "http_user_agent,status"
+    separator           = ";"
+    expression          = "^NPM Manager-upstream-check;[23][0-9]{2}$"
+    drop_counter_reason = "healthcheck_ok"
+  }
+
+  // Horodatage = celui de Nginx (fin de requête), pas l'heure de lecture.
+  stage.timestamp {
+    source = "timestamp"
+    format = "RFC3339"
+  }
+
+  // Visiteur estimé : empreinte SHA3-256 salée de (IP complète + User-Agent),
+  // calculée ici AVANT la troncature de l'IP. Le sel ne quitte pas le serveur.
+  // 16 caractères hexadécimaux (64 bits) suffisent pour un comptage distinct.
+  stage.template {
+    source   = "visitor_id"
+    template = "{{ trunc 16 (Hash (print .remote_addr \"|\" .http_user_agent) \"" + sys.env("VISITOR_SALT") + "\") }}"
+  }
+
+  // IP tronquée : /24 en IPv4 (a.b.c.0), /48 en IPv6 (a:b:c::) ; sinon "masked".
+  stage.template {
+    source   = "remote_addr"
+    template = "{{ if regexMatch \"^[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+$\" .Value }}{{ regexReplaceAll \"[.][0-9]+$\" .Value \".0\" }}{{ else if regexMatch \"^[0-9a-fA-F]{1,4}:[0-9a-fA-F]{1,4}:[0-9a-fA-F]{1,4}:\" .Value }}{{ regexReplaceAll \"^([0-9a-fA-F]{1,4}:[0-9a-fA-F]{1,4}:[0-9a-fA-F]{1,4}):.*$\" .Value \"${1}::\" }}{{ else }}masked{{ end }}"
+  }
+
+  // Segments d'URL ressemblant à des jetons (>= 32 caractères alphanumériques,
+  // ex. /reset/<token>, UUID) remplacés par ":token".
+  stage.template {
+    source   = "uri"
+    template = "{{ regexReplaceAll \"/[A-Za-z0-9_~.-]{32,}\" .Value \"/:token\" }}"
+  }
+
+  // Famille de navigateur calculée une seule fois ici (évite de parser le
+  // User-Agent à chaque requête Grafana).
+  stage.template {
+    source   = "ua_family"
+    template = "{{ $ua := .http_user_agent }}{{ if or (eq $ua \"\") (eq $ua \"-\") }}Inconnu{{ else if regexMatch \"(?i)(bot|crawl|spider|slurp|facebookexternalhit)\" $ua }}Robot{{ else if regexMatch \"(?i)(curl|wget|python|go-http|java/|okhttp|libwww|httpclient|postman|axios|node-fetch|gobuster|fuzz|nikto|sqlmap|nmap|zgrab|masscan|nuclei|upstream-check)\" $ua }}Outil/Script{{ else if contains \"Edg/\" $ua }}Edge{{ else if regexMatch \"(OPR/|Opera)\" $ua }}Opera{{ else if contains \"Firefox/\" $ua }}Firefox{{ else if regexMatch \"(Chrome/|CriOS/)\" $ua }}Chrome{{ else if contains \"Safari/\" $ua }}Safari{{ else if regexMatch \"(MSIE |Trident/)\" $ua }}Internet Explorer{{ else }}Autre{{ end }}"
+  }
+
+  // Ligne finale compacte : uniquement les champs utiles. Le timestamp n'est pas
+  // répété dans la ligne (Loki le stocke déjà) : ~35 octets économisés par ligne.
+  stage.template {
+    source   = "output_line"
+    template = "{{ dict \"server_name\" .server_name \"remote_addr\" .remote_addr \"visitor_id\" .visitor_id \"request_method\" .request_method \"uri\" .uri \"status\" .status \"body_bytes_sent\" .body_bytes_sent \"request_time\" .request_time \"upstream_response_time\" .upstream_response_time \"http_user_agent\" .http_user_agent \"ua_family\" .ua_family \"request_id\" .request_id | toJson }}"
+  }
+
+  stage.output {
+    source = "output_line"
+  }
+
+  // Limite de débit en lignes/s. drop = false : en cas de dépassement, la lecture du
+  // fichier est ralentie (backpressure), AUCUNE ligne n'est supprimée.
+  stage.limit {
+    rate  = 500
+    burst = 2000
+    drop  = false
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 3. Traitement des logs d'erreur (format texte Nginx)
+// ---------------------------------------------------------------------------
+loki.process "nginx_error" {
+  forward_to = [loki.write.central.receiver]
+
+  stage.label_drop {
+    values = ["filename"]
+  }
+
+  // 2026/11/13 18:07:20 [error] 123#123: *45 ... (heure locale du serveur)
+  stage.regex {
+    expression = "^(?P<ts>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}) "
+  }
+
+  stage.timestamp {
+    source   = "ts"
+    format   = "2006/01/02 15:04:05"
+    location = "Etc/UTC"
+  }
+
+  // Données sensibles : query strings (request, referrer, upstream) et dernier octet IPv4.
+  stage.replace {
+    expression = "request: \"[A-Z]+ [^?\" ]*(\\?[^\" ]*)"
+    replace    = ""
+  }
+  stage.replace {
+    expression = "(?:referrer|upstream): \"[^\"?]*(\\?[^\"]*)\""
+    replace    = ""
+  }
+  stage.replace {
+    expression = "client: \\d+\\.\\d+\\.\\d+\\.(\\d+)"
+    replace    = "0"
+  }
+
+  stage.limit {
+    rate  = 100
+    burst = 500
+    drop  = false
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 4. Envoi vers Loki : batch + compression snappy (native) + TLS mutuel
+// ---------------------------------------------------------------------------
+loki.write "central" {
+  endpoint {
+    name = "loki-central"
+    url  = sys.env("LOKI_URL")
+
+    // Un batch part quand il atteint batch_size OU après batch_wait.
+    // batch_wait plus long = moins de requêtes et meilleure compression,
+    // mais plus de latence d'affichage.
+    batch_wait = "5s"
+    batch_size = "1MiB"
+
+    // Coupure réseau : retries infinis (0) avec backoff exponentiel 1s -> 5min.
+    // Pendant la coupure, la file d'envoi se remplit puis bloque la lecture ;
+    // les lignes restent dans les fichiers Nginx et sont lues au rétablissement.
+    remote_timeout      = "30s"
+    min_backoff_period  = "1s"
+    max_backoff_period  = "5m"
+    max_backoff_retries = 0
+    retry_on_http_429   = true
+
+    tls_config {
+      ca_file     = "/etc/alloy/pki/ca.crt"
+      cert_file   = "/etc/alloy/pki/client.crt"
+      key_file    = "/etc/alloy/pki/client.key"
+      min_version = "TLS12"
+    }
+  }
+}
